@@ -374,9 +374,9 @@ function show_site_add(){
 	';
 
 	$section = $base->exec('select id, name
-	from '.$var['base_tab_prefix'].'sections
-	where status = "1"
-	order by binary(name) asc');
+		from '.$var['base_tab_prefix'].'sections
+		where status = "1"
+		order by binary(name) asc');
 
 	foreach($section as $section){
 		$txt .= '<option value="'.$section['id'].'"'.($section_arr[$section['id']] == 1 ? ' selected' : '').'>'.$section['name'].' </option>';

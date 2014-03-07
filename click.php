@@ -21,38 +21,33 @@ if(count($log) != 1){
 	exit;
 
 }else{
-	for($i = 0; $i <= 1; $i++){
-		$click_cnt = $base->exec('select sum(click) as click
-		from '.$var['base_tab_prefix'].'logs_'.date("Y_m_d", (time() - (86400 * $i))).'
-		where teaser_id="'.$log[0]['teaser_id'].'"
-		and user_hash="'.$log[0]['user_hash'].'"');
-		
-		if($click_cnt[0]['click'] != 0 && $click_cnt[0]['click'] != ''){
-			$not_unique_click = true;
-		}
+	$not_unique_click = false;
+
+	if( !isset($_COOKIE['ezotizer_teaser']) ){
+		$not_unique_click = true;
+		saveCookies();
 	}
 	
-	$not_unique_click = false;
-	
 	$teaser = $base->exec('select url
-	from '.$var['base_tab_prefix'].'teasers
-	where id = '.$log[0]['teaser_id'].'');
+		from '.$var['base_tab_prefix'].'teasers
+		where id = '.$log[0]['teaser_id'].'');
 	
 	$site = $base->exec('select price, price_cis
-	from '.$var['base_tab_prefix'].'sites
-	where id = '.$log[0]['site_id'].'');
+		from '.$var['base_tab_prefix'].'sites
+		where id = '.$log[0]['site_id'].'');
 	
 	$price = countryPrice($site, $country);
-  $site_price = true;
-	
-	if($not_unique_click != true){
-		//////// списываем средства с баланса рекламодател€ за клик
+
+	if($not_unique_click){
+		
+		// списываем средства с баланса рекламодател€ за клик
 		$base->exec('update '.$var['base_tab_prefix'].'users
 			set
 			count_rur = (count_rur - '.float_to_mysql($price).')
 			where id = "'.$log[0]['advertiser_id'].'"');
 		
-		//////// вносим информацию в историю баланса рекламодател€
+
+		// вносим информацию в историю баланса рекламодател€
 		$history = $base->exec('select id
 			from '.$var['base_tab_prefix'].'count_history
 			where user_id = "'.$log[0]['advertiser_id'].'"
@@ -61,14 +56,8 @@ if(count($log) != 1){
 
 		if(count($history) == 0){
 			$base->exec('insert into '.$var['base_tab_prefix'].'count_history
-			(
-				user_id,
-				amount,
-				text,
-				trans_type,
-				dataadd,
-				status
-			)values(
+			(user_id, amount, text, trans_type, dataadd, status
+			) values (
 				"'.$log[0]['advertiser_id'].'",
 				"'.float_to_mysql($price).'",
 				"—писание за клики",
@@ -76,194 +65,42 @@ if(count($log) != 1){
 				"'.$var['datetime'].'",
 				"1"
 			)');
-
 		}else{
 			$base->exec('update '.$var['base_tab_prefix'].'count_history
 				set amount = (amount + '.float_to_mysql($price).')
 				where id = "'.$history[0]['id'].'"');
 		}
 
-		if(isset($site_price) && $price > 0){
-			///////// зачисл€ем средства на баланс вебмастера за клик
+		if($price > 0){
+			// зачисл€ем средства на баланс вебмастера за клик
 			$base->exec('update '.$var['base_tab_prefix'].'users
-			set
-			count_rur = (count_rur + '.float_to_mysql((isset($site_price) ? $price : ($price * $var['webmaster_procent']))).')
-			where id = "'.$log[0]['webmaster_id'].'"');
-			
-			//////// вносим информацию в историю баланса вебмастера
+				set
+				count_rur = (count_rur + '.float_to_mysql($price).')
+				where id = "'.$log[0]['webmaster_id'].'"');
+
+			// вносим информацию в историю баланса вебмастера
 			$history = $base->exec('select id
-			from '.$var['base_tab_prefix'].'count_history
-			where user_id = "'.$log[0]['webmaster_id'].'"
-			and text = "«ачисление за клики"
-			and date(dataadd) = "'.$var['date'].'"');
+				from '.$var['base_tab_prefix'].'count_history
+				where user_id = "'.$log[0]['webmaster_id'].'"
+				and text = "«ачисление за клики"
+				and date(dataadd) = "'.$var['date'].'"');
 
 			if(count($history) == 0){
 				$base->exec('insert into '.$var['base_tab_prefix'].'count_history
-				(
-					user_id,
-					amount,
-					text,
-					trans_type,
-					dataadd,
-					status
-				)values(
+				( user_id, amount, text, trans_type, dataadd, status
+				) values (
 					"'.$log[0]['webmaster_id'].'",
-					"'.float_to_mysql((isset($site_price) ? $price : ($price * $var['webmaster_procent']))).'",
+					"'.float_to_mysql($price).'",
 					"«ачисление за клики",
 					"1",
 					"'.$var['datetime'].'",
 					"1"
 				)');
 
-			}else{
-	      $base->exec('update '.$var['base_tab_prefix'].'count_history
-	        set amount = (amount + '.float_to_mysql((isset($site_price) ? $price : ($price * $var['webmaster_procent']))).')
-	        where id = "'.$history[0]['id'].'"');
-			}
-		}
-
-		if(!isset($site_price)){
-			///////// зачисл€ем средства на баланс партнера пригласившего вебмастера
-			$webmaster = $base->exec('select pid
-			from '.$var['base_tab_prefix'].'users
-			where id = "'.$log[0]['webmaster_id'].'"');
-
-			if($webmaster[0]['pid'] != 0){
-				$base->exec('update '.$var['base_tab_prefix'].'users
-				set
-				count_rur = (count_rur + '.float_to_mysql(($price - ($price * $var['webmaster_procent'])) * $var['partner_procent']).')
-				where id = "'.$webmaster[0]['pid'].'"');
-
-				//////// вносим информацию в историю баланса партнера
-				$history = $base->exec('select id
-				from '.$var['base_tab_prefix'].'count_history
-				where user_id = "'.$webmaster[0]['pid'].'"
-				and text = "ѕартнерское вознаграждение за вебмастера"
-				and date(dataadd) = "'.$var['date'].'"');
-
-				if(count($history) == 0){
-					$base->exec('insert into '.$var['base_tab_prefix'].'count_history
-					(
-						user_id,
-						amount,
-						text,
-						trans_type,
-						dataadd,
-						status
-					)values(
-						"'.$webmaster[0]['pid'].'",
-						"'.float_to_mysql(($price - ($price * $var['webmaster_procent'])) * $var['partner_procent']).'",
-						"ѕартнерское вознаграждение за вебмастера",
-						"1",
-						"'.$var['datetime'].'",
-						"1"
-					)');
-
-				}else{
-		            $base->exec('update '.$var['base_tab_prefix'].'count_history
-		            set amount = (amount + '.float_to_mysql(($price - ($price * $var['webmaster_procent'])) * $var['partner_procent']).')
-		            where id = "'.$history[0]['id'].'"');
-				}
-
-				//////////// обновл€ем статистику по доходам от реферала
-				$stat = $base->exec('select id
-				from '.$var['base_tab_prefix'].'partners_stat
-				where user_id = "'.$log[0]['webmaster_id'].'"
-				and partner_id = "'.$webmaster[0]['pid'].'"
-				and dataadd = "'.$var['date'].'"');
-
-			   	if(count($stat) == 0){
-			   		$base->exec('insert into '.$var['base_tab_prefix'].'partners_stat
-			   		(
-			   		user_id,
-			   		partner_id,
-			   		count_rur,
-			   		dataadd
-			   		) values (
-			   		"'.$log[0]['webmaster_id'].'",
-			   		"'.$webmaster[0]['pid'].'",
-			   		"'.float_to_mysql(($price - ($price * $var['webmaster_procent'])) * $var['partner_procent']).'",
-			   		"'.$var['date'].'"
-			   		)');
-
-			   	}else{
-			        $base->exec('update '.$var['base_tab_prefix'].'partners_stat
-					set count_rur = (count_rur + '.float_to_mysql(($price - ($price * $var['webmaster_procent'])) * $var['partner_procent']).')
-					where user_id = "'.$log[0]['webmaster_id'].'"
-					and partner_id="'.$webmaster[0]['pid'].'"
-					and dataadd = "'.$var['date'].'"');
-				}
-			}
-
-			///////// зачисл€ем средства на баланс партнера пригласившего рекламодател€
-			$advertiser = $base->exec('select pid
-			from '.$var['base_tab_prefix'].'users
-			where id = "'.$log[0]['advertiser_id'].'"');
-
-			if($advertiser[0]['pid'] != 0){
-				$base->exec('update '.$var['base_tab_prefix'].'users
-				set
-				count_rur = (count_rur + '.float_to_mysql(($price - ($price * $var['webmaster_procent'])) * $var['partner_procent']).')
-				where id = "'.$advertiser[0]['pid'].'"');
-
-				//////// вносим информацию в историю баланса партнера
-				$history = $base->exec('select id
-				from '.$var['base_tab_prefix'].'count_history
-				where user_id = "'.$advertiser[0]['pid'].'"
-				and text = "ѕартнерское вознаграждение за рекламодател€"
-				and date(dataadd) = "'.$var['date'].'"');
-
-				if(count($history) == 0){
-					$base->exec('insert into '.$var['base_tab_prefix'].'count_history
-					(
-						user_id,
-						amount,
-						text,
-						trans_type,
-						dataadd,
-						status
-					)values(
-						"'.$advertiser[0]['pid'].'",
-						"'.float_to_mysql(($price - ($price * $var['webmaster_procent'])) * $var['partner_procent']).'",
-						"ѕартнерское вознаграждение за рекламодател€",
-						"1",
-						"'.$var['datetime'].'",
-						"1"
-					)');
-				}else{
-					$base->exec('update '.$var['base_tab_prefix'].'count_history
-					set amount = (amount + '.float_to_mysql(($price - ($price * $var['webmaster_procent'])) * $var['partner_procent']).')
+			} else {
+				$base->exec('update '.$var['base_tab_prefix'].'count_history
+					set amount = (amount + '.float_to_mysql($price).')
 					where id = "'.$history[0]['id'].'"');
-				}
-
-				//////////// одновл€ем статистику по доходам от реферала
-				$stat = $base->exec('select id
-				from '.$var['base_tab_prefix'].'partners_stat
-				where user_id = "'.$log[0]['advertiser_id'].'"
-				and partner_id = "'.$advertiser[0]['pid'].'"
-				and dataadd = "'.$var['date'].'"');
-
-				if(count($stat) == 0){
-					$base->exec('insert into '.$var['base_tab_prefix'].'partners_stat
-					(
-					user_id,
-					partner_id,
-					count_rur,
-					dataadd
-					) values (
-					"'.$log[0]['advertiser_id'].'",
-					"'.$advertiser[0]['pid'].'",
-					"'.float_to_mysql(($price - ($price * $var['webmaster_procent'])) * $var['partner_procent']).'",
-					"'.$var['date'].'"
-					)');
-
-				}else{
-					$base->exec('update '.$var['base_tab_prefix'].'partners_stat
-						set count_rur = (count_rur + '.float_to_mysql(($price - ($price * $var['webmaster_procent'])) * $var['partner_procent']).')
-						where user_id = "'.$log[0]['advertiser_id'].'"
-						and partner_id="'.$advertiser[0]['pid'].'"
-						and dataadd = "'.$var['date'].'"');
-				}
 			}
 		}
 
@@ -277,20 +114,10 @@ if(count($log) != 1){
 		save_stat('teaser', $log[0]['teaser_id'], float_to_mysql($price));
 		save_stat('site', $log[0]['site_id'], float_to_mysql($price));
 		save_stat('block', $log[0]['block_id'], float_to_mysql($price));
-
-	} else {
-    $base->exec('update '.$var['base_tab_prefix'].'logs_'.date("Y_m_d").'
-			set
-			click = (click + 1)
-			where id = "'.$log[0]['id'].'"');
-
-		update_stat('campaign', $log[0]['campaign_id']);
-		update_stat('teaser', $log[0]['teaser_id']);
-		update_stat('site', $log[0]['site_id']);
-		update_stat('block', $log[0]['block_id']);
 	}
+
 	$click_url = html_entity_decode($teaser[0]['url']);
-	
+
 	$label_type = $base->exec('select labels, subid
 	from '.$var['base_tab_prefix'].'campaigns
 	where id = "'.$log[0]['campaign_id'].'"');
@@ -375,5 +202,9 @@ function subid_designer($subid, $teaser_id,$site_id){
 	$subid_rename = str_replace("{source}", $site_id, $subid_rename);
 	
 	return $subid_rename;
+}
+
+function saveCookies(){
+    return setcookie('ezotizer_teaser', 'have', time() + 86400, '/');
 }
 ?>

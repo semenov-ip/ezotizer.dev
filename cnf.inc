@@ -9,8 +9,8 @@ session_start();
 
 $mysql_host = 'localhost';						// хост базы mysql
 $mysql_base = 'ezotizer';					// имя базы mysql
-$mysql_user = 'ezotizer';							// пользователь базы mysql
-$mysql_pass = 'Fpz9vayp';							// пароль базы mysql
+$mysql_user = 'root';							// пользователь базы mysql
+$mysql_pass = 'root';							// пароль базы mysql
 $var['base_tab_prefix'] = 'adtram_';			// префикс таблиц MySQL
 
 $base = new SQLclass($mysql_host, $mysql_base, $mysql_user, $mysql_pass);
