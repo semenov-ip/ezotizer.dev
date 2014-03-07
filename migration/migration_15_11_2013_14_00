@@ -1,0 +1,5 @@
++alter table `adtram_sites` add `price_cis` float(8,2) not null  after `price`;
++alter table `adtram_sections` add `price_cis` float(8,2) not null  after `price`;
++alter table `adtram_campaigns` add `price_cis` float(8,2) not null  after `price`;
++alter table `adtram_teasers` add `price_cis` float(8,2) not null  after `price`;
++alter table `adtram_campaigns` add `subid` varchar(200) DEFAULT " " AFTER labels;

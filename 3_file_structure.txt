@@ -1,0 +1,66 @@
+############################################
+Файловая структура
+############################################
+
+/cnf.inc			- файл настроек
+/pay.php			- файл обработки платежей Merchant.Webmoney (Result URL)
+/click.php			- файл обработки кликов
+/administrator/
+/advertiser/
+/advertiser/campaigns/
+/advertiser/settings/
+/agree/
+/balance/
+/faq/
+/getNewPassword/
+/i/				- папка с gif, css, js файлами
+/include/			- папка с файлами, содержащими все функции обработки
+
+# в основном в папке includes
+# название файла обработчика
+# соответсвует разделу
+
+/include/auth.inc		- файл обработки авторизации и напоминания пароля
+/include/chart.inc		- файл обработки вывода данных для Flash - графика
+/include/chart_object.inc	- файл обработки вывода html-кода Flash - графика
+/include/menu.inc		- файл обработки вывода пользовательского меню
+/include/reg.inc		- файл обработки регистрации пользователей
+
+/invitations/
+/li/				- папка, где граняться загруженные изображения тизеров
+/login/
+/news/
+/patterns/			- папка с шаблонами
+/patterns/index_.html		- файл-шаблон главной страницы
+/patterns/index.html		- файл-шаблон второстепенных страниц
+/registration/
+/show/
+/show/index.php			- файл обработки вывода блока тизеров
+/sql/				- дамп базы данных
+/tickets/
+/top10/
+/webmaster/settings/
+/webmaster/sites/
+
+############################################
+База данных
+############################################
+adtram_					- префикс таблиц (настраивается в /cnf.inc)
+
+blocks					- блоки сайтов
+blocks_stat				- статистика по блокам
+campaigns				- кампании
+campaigns_stat			- статистика кампаний
+count_history			- история баланса
+invites					- приглашения
+ipgeobase				- ipGeoBase - сетки IP-адресов
+logs_2010_10_...        - ежедневные данные посетителей (ip, браузеры, города, регионы, просмотры, клики и т.п)
+news					- новости
+pages					- страницы (faq, agree)
+sections				- тематики
+sites					- сайты
+sites_stat				- статистика по сайтам
+teasers					- тизеры
+teasers_stat			- статистика по тизерам
+tickets					- тикеты
+users					- пользователи

@@ -1,0 +1,10 @@
+В файле pay.php есть строка кода:
+
+if ($_GET['secret_key'] != 'c21bb91f067488e'){
+       $merchant_text .= 'error:4';
+       echo "err:5"; exit;
+}
+
+замените c21bb91f067488e на что-либо другое.
+
+В мерчанте в Result URL пропишите pay.php?secret_key=c21bb91f067488e

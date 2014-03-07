@@ -1,0 +1,9 @@
+AddDefaultCharset windows-1251
+<Files "*.inc">
+  Order deny,allow
+  Deny from all
+  Satisfy All
+</Files>
+RewriteEngine On
+
+#Redirect 301 ezotizer.ru/index.html ezotizer.ru/login/
