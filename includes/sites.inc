@@ -82,7 +82,7 @@ function show_sites(){
 
 	$campaignStatistics = campaignsStatExtratc($site, 'sites_stat', 'site_id');
 
-  $view_cnt = 0;
+	$view_cnt = 0;
 	$click_cnt = 0;
 
 	if(count($site) > 0){
@@ -195,11 +195,7 @@ function show_site_add(){
 		$aliases = $site[0]['aliases'];
 		$ban_teaser = $site[0]['ban_teaser'];
 		$url_coding = $site[0]['url_coding'];
-		$sections = explode("~", $site[0]['sections']);
-    foreach($sections as $sections){
-			if($sections == '')continue;
-			$section_arr[$sections] = 1;
-		}
+		$sections = $site[0]['sections'];
 		$stat_logs = $site[0]['stat_logs'];
 	}
 
@@ -220,17 +216,8 @@ function show_site_add(){
 		$aliases = stripslashes(htmlspecialchars(trim(post_str_val('aliases'))));
 		$ban_teaser = stripslashes(htmlspecialchars(trim(post_str_val('ban_teaser'))));
 		$url_coding = stripslashes(htmlspecialchars(trim(post_str_val('url_coding'))));
-		$section_arr = '';
 		$sections = $_POST['sections'];
 		$stat_logs = stripslashes(htmlspecialchars(trim(post_str_val('stat_logs'))));
-
-		if(count($sections) > 0){
-			foreach($sections as $section){
-				if($section == '')continue;
-				$section_arr[$section] = 1;
-				$section_list .= '~'.$section.'~';
-			}
-		}
 
 		if(!$error && !$site_id){
 			if($url == '' || $url == 'http://'){
@@ -250,65 +237,51 @@ function show_site_add(){
 		}
 
 		if(!$error){
-			if($section_list == ''){
-				$error = 'необходимо указать хотя бы одну тематику.';
-			}
-		}
-
-    $sections_price = $base->exec('select id, name, price, price_cis
-      from '.$var['base_tab_prefix'].'sections
-      where status = "1" AND id = '.$sections[0].'
-      order by binary(name) asc');
-
-		$price = $sections_price[0]['price'];
-		$price_cis = $sections_price[0]['price_cis'];
-
-		if(!$error){
-      if($site_id){
-        $base->exec('update '.$var['base_tab_prefix'].'sites set
-					aliases = "'.$aliases.'",
-					ban_teaser = "'.$ban_teaser.'",
-					url_coding = "'.$url_coding.'",
-					sections = "'.$section_list.'",
-					stat_logs = "'.$stat_logs.'"
-					where id="'.$site_id.'"'
-				);
+			if($site_id){
+			  $base->exec('update '.$var['base_tab_prefix'].'sites set
+				  aliases = "'.$aliases.'",
+				  ban_teaser = "'.$ban_teaser.'",
+				  url_coding = "'.$url_coding.'",
+				  sections = "'.$sections.'",
+				  stat_logs = "'.$stat_logs.'"
+				  where id="'.$site_id.'"'
+			  );
 
         $postok = 'изменения сохранены.';
 
-      }else{
-        $base->exec('
-	        	insert into '.$var['base_tab_prefix'].'sites(
-						user_id,
-						url,
-						aliases,
-						ban_teaser,
-						url_coding,
-						sections,
-						stat_logs,
-						dataadd,
-						last_load,
-						price,
-						price_cis,
-						comment,
-						mobil,
-						status
-	        	)values(
-						"'.$var['user_id'].'",
-						"'.$url.'",
-						"'.$aliases.'",
-						"'.$ban_teaser.'",
-						"'.$url_coding.'",
-						"'.$section_list.'",
-						"'.$stat_logs.'",
-						"'.$var['datetime'].'",
-						"0000-00-00 00:00:00",
-						"'.$price.'",
-						"'.$price_cis.'",
-						"",
-						0,
-						0
-	        	)');
+		}else{
+			$base->exec('
+				insert into '.$var['base_tab_prefix'].'sites(
+					user_id,
+					url,
+					aliases,
+					ban_teaser,
+					url_coding,
+					sections,
+					stat_logs,
+					dataadd,
+					last_load,
+					price,
+					price_cis,
+					comment,
+					mobil,
+					status
+				) values (
+					"'.$var['user_id'].'",
+					"'.$url.'",
+					"'.$aliases.'",
+					"'.$ban_teaser.'",
+					"'.$url_coding.'",
+					"'.$sections.'",
+					"'.$stat_logs.'",
+					"'.$var['datetime'].'",
+					"0000-00-00 00:00:00",
+					"0.00",
+					"0.00",
+					"",
+					0,
+					0
+				)');
 
 	      $id = $base->new_id();
 				if($id){
@@ -370,7 +343,7 @@ function show_site_add(){
        <td>Укажите тематики,<br/>которые вы разрешаете<br/>к показу на сайте.</td>
        <td>
         <div style="width: 350px;">
-        <select name="sections[]" class="select" size="8" multiple>
+        <select name="sections" class="select">
 	';
 
 	$section = $base->exec('select id, name
@@ -379,13 +352,13 @@ function show_site_add(){
 		order by binary(name) asc');
 
 	foreach($section as $section){
+		
 		$txt .= '<option value="'.$section['id'].'"'.($section_arr[$section['id']] == 1 ? ' selected' : '').'>'.$section['name'].' </option>';
 	}
 
   	$txt .='
 		</select>
         </div>
-        <div class="dsc">Вы можете указать несколько тематик, удерживая клавишу Ctrl</div>
        </td>
       </tr>
       <tr>

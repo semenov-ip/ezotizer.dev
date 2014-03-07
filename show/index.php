@@ -96,12 +96,12 @@ if($site[0]['url_coding'] == 'utf8'){
   
 }
 
-//////////////// получаем список запрещенных тематик для сайта
+// получаем список запрещенных тематик для сайта
 $ban_sections_ids = '';
 
 $section = $base->exec('select id, name
-from '.$var['base_tab_prefix'].'sections
-order by binary(name) asc');
+	from '.$var['base_tab_prefix'].'sections
+	order by binary(name) asc');
 
 foreach($section as $section){
 	if(!strstr($site[0]['sections'], '~'.$section['id'].'~')){
@@ -114,7 +114,7 @@ foreach($section as $section){
 	}
 }
 
-/////////////// получаем данные для геотаргетинга
+// получаем данные для геотаргетинга
 $ipgeobase = ipgeobase($var['user_ip']);
 
 if($ipgeobase['region'] == '-' && $site[0]['url_coding'] == 'utf8')$ipgeobase['region'] = iconv("windows-1251", "utf-8", 'Прочие регионы');
@@ -129,7 +129,7 @@ $teaser = $base->exec('select id, user_id, campaign_id, image, text
 from '.$var['base_tab_prefix'].'teasers_list
 where ban_site not like "%'.$referer_url.'%"
 '.($site[0]['ban_teaser'] != '' ? 'and id not in ('.$site[0]['ban_teaser'].')' : '').'
-'.($ban_sections_ids ? 'and section_id not in ('.$ban_sections_ids.')' : '').'
+and section_id = '.$site[0]['sections'].'
 '.($ipgeobase['region'] != '' ? 'and ban_region not like "%~'.$ipgeobase['region'].'~%"' : '').'
 '.($ipgeobase['country'] != '' ? 'and ban_country not like "%~'.$ipgeobase['country'].'~%"' : '').'
 '.(isset($_COOKIE['teaser_ids']) && $_COOKIE['teaser_ids'] != '' ? 'and id not in('.$_COOKIE['teaser_ids'].')' : '').'
@@ -148,7 +148,7 @@ if(count($teaser) == 0 || count($teaser) < $limit){
 	from '.$var['base_tab_prefix'].'teasers_list
 	where ban_site not like "%'.$referer_url.'%"
 	'.($site[0]['ban_teaser'] != '' ? 'and id not in ('.$site[0]['ban_teaser'].')' : '').'
-	'.($ban_sections_ids ? 'and section_id not in ('.$ban_sections_ids.')' : '').'
+	and section_id = '.$site[0]['sections'].'
 	'.($ipgeobase['region'] != '' ? 'and ban_region not like "%~'.$ipgeobase['region'].'~%"' : '').'
 	'.($ipgeobase['country'] != '' ? 'and ban_country not like "%~'.$ipgeobase['country'].'~%"' : '').'
 	and url not like "%'.$referer_url.'%"
@@ -194,7 +194,7 @@ if(count($teaser) != 0){
       and teaser_id = '.$teaser['id'].'
       and user_hash = "'.$teaser_user_hash.'"
       and dataadd = "'.$var['date'].'"
-		');
+	');
 
 		$hash = md5($teaser['user_id'].$site_id.$block_id.$teaser['campaign_id'].$teaser['id'].$teaser_user_hash.$var['date']);
 

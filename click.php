@@ -32,10 +32,10 @@ if(count($log) != 1){
 		from '.$var['base_tab_prefix'].'teasers
 		where id = '.$log[0]['teaser_id'].'');
 	
-	$site = $base->exec('select price, price_cis
+	$site = $base->exec('select price, price_cis, sections
 		from '.$var['base_tab_prefix'].'sites
 		where id = '.$log[0]['site_id'].'');
-	
+
 	$price = countryPrice($site, $country);
 
 	if($not_unique_click){
@@ -188,6 +188,15 @@ function update_stat($table, $field){
 }
 
 function countryPrice($dataPrice, $country){
+	global $base;
+	global $var;
+
+	if( $dataPrice[0]['price'] == '0.00' && $dataPrice[0]['price_cis'] == '0.00' ){
+		$dataPrice = $base->exec('select price, price_cis
+			from '.$var['base_tab_prefix'].'sections
+			where id = '.$dataPrice[0]['sections'].'');
+	}
+
 	if($country=="RU"){
 		return $dataPrice[0]['price'];
 	} else {
